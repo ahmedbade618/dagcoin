@@ -61,7 +61,7 @@ no-nested-ternary,no-shadow,no-plusplus,consistent-return,import/no-extraneous-d
         self.usePushNotifications = false;
 
         constants.DAG_FEE = 500; // TODO: this is the transaction fee in micro dagcoins 1000 = 0.001 dagcoins
-        constants.MIN_BYTE_FEE = 950;
+        constants.MIN_BYTE_FEE = 1500;
 
         fundingExchangeClientService.setIndex(this);
 

@@ -759,7 +759,6 @@
           const recipientDeviceAddress = assocDeviceAddressesByPaymentAddress[address];
           let amount = form.amount.$modelValue;
           const paymentId = form.paymentId ? form.paymentId.$modelValue : null;
-          // const paymentId = 1;
           let merkleProof = '';
           if (form.merkle_proof && form.merkle_proof.$modelValue) {
             merkleProof = form.merkle_proof.$modelValue.trim();
@@ -887,7 +886,6 @@
               // compose and send
               function composeAndSend(toAddress) {
                 let arrSigningDeviceAddresses = []; // empty list means that all signatures are required (such as 2-of-2)
-                let opts = {};
                 if (fc.credentials.m < fc.credentials.n) {
                   $scope.index.copayers.forEach((copayer) => {
                     if (copayer.me || copayer.signs) {
@@ -897,7 +895,7 @@
                 } else if (indexScope.shared_address) {
                   arrSigningDeviceAddresses = indexScope.copayers.map(copayer => copayer.device_address);
                 }
-                opts = {
+                const opts = {
                   shared_address: indexScope.shared_address,
                   merkleProof,
                   asset,
@@ -905,144 +903,119 @@
                   amount,
                   send_all: false,
                   arrSigningDeviceAddresses,
-                  recipientDeviceAddress,
+                  recipientDeviceAddress
                 };
+
+                if (paymentId != null) {
+                  const objectHash = require('byteballcore/object_hash');
+                  const payload = JSON.stringify({ paymentId });
+                  opts.messages = [{
+                    app: 'text',
+                    payload_location: 'inline',
+                    payload_hash: objectHash.getBase64Hash(payload),
+                    payload
+                  }];
+                }
+
                 breadcrumbs.add(`sending payment in ${asset}`);
                 profileService.bKeepUnlocked = true;
 
-                let paymentPromise = null;
+                console.log('Balance stable');
+                console.log(JSON.stringify(indexScope.baseBalance));
 
-                if (indexScope.baseBalance.stable < constants.MIN_BYTE_FEE) {
-                  if (!fundingExchangeClientService.active) {
-                    paymentPromise = Promise.reject(gettextCatalog.getString('The Funding Client is not ready'));
-                  } else {
-                    paymentPromise = fundingExchangeClientService.getByteOrigin().then((sharedAddress) => {
-                      console.log(`ADDRESS${sharedAddress ? ' ' : ' NOT '}SERVED BY THE FUNDING NODE`);
-                      if (!sharedAddress) {
-                        return Promise.reject(gettextCatalog.getString('The funding service is currently not supported on secondary wallets. Load some bytes on it'));
-                      }
+                const paymentRequestProperties = {
+                  paymentProps: opts,
+                  baseBalance: {
+                    stable: indexScope.baseBalance.stable
+                  },
+                  constants: {
+                    MIN_BYTE_FEE: constants.MIN_BYTE_FEE,
+                    DAG_FEE: constants.DAG_FEE,
+                  },
+                  fundingExchangeClientService,
+                  fc,
+                  walletDefinedByKeys
+                };
 
-                      return fundingExchangeClientService.getSharedAddressBalance(sharedAddress).then((assocBalances) => {
-                        console.log(`BALANCE FOR ${sharedAddress}: ${JSON.stringify(assocBalances)}`);
+                const paymentFsm = require('dagcoin-wallet-workflows/lib/payment/payment')(paymentRequestProperties);
+                paymentFsm.start();
 
-                        if (assocBalances.base.stable === 0 || assocBalances.base.stable < 1500) {
-                          return Promise.reject(gettextCatalog.getString('Funding hub is fueling your wallet, it may take several minutes. Please try again a bit later.'));
-                        }
+                paymentFsm.pingUntilOver().then(() => new Promise((resolve, reject) => {
+                    indexScope.setOngoingProcess(gettextCatalog.getString('sending'), false);
+                    breadcrumbs.add(`done payment in ${asset}, err=${paymentFsm.getData('send-payment-error')}`);
+                    delete self.current_payment_key;
+                    profileService.bKeepUnlocked = false;
 
-                        opts = {
-                          from_address: fundingExchangeClientService.walletAddresses,
-                          main_address: fundingExchangeClientService.dagcoinOrigin,
-                          shared_address: sharedAddress,
-                          merkleProof,
-                          asset,
-                          /* to_address: toAddress,
-                           amount, */
-                          send_all: false,
-                          arrSigningDeviceAddresses,
-                          recipientDeviceAddress,
-                          externallyFundedPayment: true,
-                          asset_outputs: [
-                            {
-                              address: fundingExchangeClientService.dagcoinDestination,
-                              amount: constants.DAG_FEE // TODO: this is the transaction fee in micro dagcoins 1000 = 0.001 dagcoins
-                            }, {
-                              address: toAddress,
-                              amount
-                            }
-                          ]
-                        };
 
-                        return Promise.resolve();
-                      });
-                    });
-                  }
-                } else {
-                  paymentPromise = Promise.resolve();
-                }
+                    if (paymentFsm.getCurrentState().getName() !== 'payment-done') {
+                      const paymentError = paymentFsm.getData('send-payment-error');
+                      const errorCodes = require('dagcoin-wallet-workflows/lib/errorCodes');
 
-                paymentPromise.then(() => new Promise((resolve, reject) => {
-                  if (paymentId != null) {
-                    const objectHash = require('byteballcore/object_hash');
-                    const payload = JSON.stringify({ paymentId });
-                    opts.messages = [{
-                      app: 'text',
-                      payload_location: 'inline',
-                      payload_hash: objectHash.getBase64Hash(payload),
-                      payload
-                    }];
-                  }
 
-                  console.log(`PAYMENT OPTIONS BEFORE: ${JSON.stringify(opts)}`);
-                  useOrIssueNextAddress(fc.credentials.walletId, 0, (addressInfo) => {
-                    opts.change_address = addressInfo.address;
-                    fc.sendMultiPayment(opts, (sendMultiPaymentError) => {
-                      let error = sendMultiPaymentError;
-                      // if multisig, it might take very long before the callback is called
-                      indexScope.setOngoingProcess(gettextCatalog.getString('sending'), false);
-                      breadcrumbs.add(`done payment in ${asset}, err=${sendMultiPaymentError}`);
-                      delete self.current_payment_key;
-                      profileService.bKeepUnlocked = false;
-                      if (sendMultiPaymentError) {
-                        if (sendMultiPaymentError.match(/no funded/) || sendMultiPaymentError.match(/not enough asset coins/)) {
-                          error = gettextCatalog.getString('Not enough dagcoins');
-                        } else if (sendMultiPaymentError.match(/connection closed/) || sendMultiPaymentError.match(/connect to light vendor failed/)) {
-                          error = gettextCatalog.getString('Problems with connecting to the hub. Please try again later');
-                        }
-                        return self.setSendError(error);
-                      }
-                      const binding = self.binding;
-                      self.resetForm();
-                      $rootScope.$emit('NewOutgoingTx');
-                      if (recipientDeviceAddress) { // show payment in chat window
-                        eventBus.emit('sent_payment', recipientDeviceAddress, amount || 'all', asset, indexScope.walletId, true, toAddress);
-                        if (binding && binding.reverseAmount) { // create a request for reverse payment
-                          if (!myAddress) {
-                            throw Error(gettextCatalog.getString('my address not known'));
-                          }
-                          const paymentRequestCode = `dagcoin:${myAddress}?amount=${binding.reverseAmount}&asset=${encodeURIComponent(binding.reverseAsset)}`;
-                          const paymentRequestText = `[reverse payment](${paymentRequestCode})`;
-                          device.sendMessageToDevice(recipientDeviceAddress, 'text', paymentRequestText);
-                          correspondentListService.messageEventsByCorrespondent[recipientDeviceAddress].push({
-                            bIncoming: false,
-                            message: correspondentListService.formatOutgoingMessage(paymentRequestText),
-                            timestamp: Math.floor(Date.now() / 1000)
-                          });
-                          // issue next address to avoid reusing the reverse payment address
-                          if (!fc.isSingleAddress) {
-                            walletDefinedByKeys.issueNextAddress(fc.credentials.walletId, 0, () => {
-                            });
-                          }
-                        }
+                      if (paymentError === errorCodes.FUNDING_NODE_NOT_ACTIVE) {
+                        reject(gettextCatalog.getString('The Funding Client is not ready'));
+                      } else if (paymentError === errorCodes.SHARED_ADDRESS_NOT_PRESENT) {
+                        reject(gettextCatalog.getString('The funding service is currently not supported on secondary wallets. Load some bytes on it'));
+                      } else if (paymentError === errorCodes.NOT_ENOUGH_BYTES) {
+                        reject(gettextCatalog.getString('Funding hub is fueling your wallet, it may take several minutes. Please try again a bit later.'));
+                      } else if (paymentError.match(/no funded/) || paymentError.match(/not enough asset coins/)) {
+                        reject(gettextCatalog.getString('Not enough dagcoins'));
+                      } else if (paymentError.match(/connection closed/) || paymentError.match(/connect to light vendor failed/)) {
+                        reject(gettextCatalog.getString('Problems with connecting to the hub. Please try again later'));
                       } else {
-                        indexScope.updateTxHistory();
-                        $rootScope.$emit('Local/SetTab', 'walletHome');
-                        $timeout(() => {
-                          self.openTxModal(indexScope.txHistory[0], indexScope.txHistory);
-                        }, 2000);
+                        reject(paymentError);
                       }
-                      resolve();
-                    });
-                  });
-                  $scope.sendForm.$setPristine();
-                })).catch((error) => {
+                      return;
+                    }
+
+                    const binding = self.binding;
+
+                    self.resetForm();
+
+                    $rootScope.$emit('NewOutgoingTx');
+
+                    if (recipientDeviceAddress) { // show payment in chat window
+                      eventBus.emit('sent_payment', recipientDeviceAddress, amount || 'all', asset);
+
+                      if (binding && binding.reverseAmount) { // create a request for reverse payment
+                        if (!myAddress) {
+                          reject(gettextCatalog.getString('my address not known'));
+                        }
+                        const paymentRequestCode = `dagcoin:${myAddress}?amount=${binding.reverseAmount}&asset=${encodeURIComponent(binding.reverseAsset)}`;
+                        const paymentRequestText = `[reverse payment](${paymentRequestCode})`;
+                        device.sendMessageToDevice(recipientDeviceAddress, 'text', paymentRequestText);
+                        correspondentListService.messageEventsByCorrespondent[recipientDeviceAddress].push({
+                          bIncoming: false,
+                          message: correspondentListService.formatOutgoingMessage(paymentRequestText),
+                          timestamp: Math.floor(Date.now() / 1000)
+                        });
+                        // issue next address to avoid reusing the reverse payment address
+                        if (!fc.isSingleAddress) {
+                          walletDefinedByKeys.issueNextAddress(fc.credentials.walletId, 0, () => {
+                          });
+                        }
+                      }
+                    } else {
+                      indexScope.updateTxHistory();
+                      $rootScope.$emit('Local/SetTab', 'walletHome');
+                      $timeout(() => {
+                        self.openTxModal(indexScope.txHistory[0], indexScope.txHistory);
+                      }, 2000);
+                    }
+
+                    $scope.sendForm.$setPristine();
+
+                    resolve();
+                  }
+                ).catch((error) => {
                   delete self.current_payment_key;
                   indexScope.setOngoingProcess(gettextCatalog.getString('sending'), false);
                   $rootScope.$emit('Local/ShowAlert', error, 'fi-alert', () => {
                   });
-                });
-              }
-
-              function useOrIssueNextAddress(wallet, isChange, handleAddress) {
-                if (fc.isSingleAddress) {
-                  handleAddress({
-                    address: self.addr[fc.credentials.walletId]
-                  });
-                } else {
-                  walletDefinedByKeys.issueNextAddress(wallet, isChange, handleAddress);
-                }
+                }));
               }
             });
-          }, 100);
+          });
         };
 
         let assocDeviceAddressesByPaymentAddress = {};
@@ -1081,6 +1054,7 @@
           return !!recipientDeviceAddress;
         };
 
+
         this.openBindModal = function () {
           $rootScope.modalOpened = true;
           const fc = profileService.focusedClient;
@@ -1090,6 +1064,7 @@
             return;
           }
           const address = form.address;
+
 
           const ModalInstanceCtrl = function ($scope, $modalInstance) {
             $scope.color = fc.backgroundColor;

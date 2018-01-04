@@ -1004,11 +1004,27 @@ no-nested-ternary,no-shadow,no-plusplus,consistent-return,import/no-extraneous-d
         };
 
         this.csvHistory = function () {
+          const __CSV_CONTENT_ID = '__csv_content';
+          function setCvsContent(data) {
+            let csvElement = document.getElementById(__CSV_CONTENT_ID);
+            if (lodash.isEmpty(csvElement)) {
+              $log.error(`Textarea element with id=${__CSV_CONTENT_ID} not exits in DOM`);
+              return;
+            }
+            csvElement.value = data;
+          }
+
           function saveFile(name, data) {
             const chooser = document.querySelector(name);
+            setCvsContent(data);
+            chooser.removeEventListener('change', function() { });
             chooser.addEventListener('change', function (evt) {
               const fs = require('fs');
-              fs.writeFile(this.value, data, (err) => {
+              const csvElement = document.getElementById(__CSV_CONTENT_ID)
+              let cvsContent = csvElement !== null
+                ? document.getElementById(__CSV_CONTENT_ID).value
+                : `Textarea element with id=${__CSV_CONTENT_ID} not exits in DOM`;
+              fs.writeFile(this.value, cvsContent, (err) => {
                 if (err) {
                   $log.debug(evt, err);
                 }

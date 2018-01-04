@@ -1004,11 +1004,11 @@ no-nested-ternary,no-shadow,no-plusplus,consistent-return,import/no-extraneous-d
         };
 
         this.csvHistory = function () {
-          const __CSV_CONTENT_ID = '__csv_content';
+          const CSV_CONTENT_ID = '__csv_content';
           function setCvsContent(data) {
-            let csvElement = document.getElementById(__CSV_CONTENT_ID);
+            const csvElement = document.getElementById(CSV_CONTENT_ID);
             if (lodash.isEmpty(csvElement)) {
-              $log.error(`Textarea element with id=${__CSV_CONTENT_ID} not exits in DOM`);
+              $log.error(`Textarea element with id=${CSV_CONTENT_ID} not exits in DOM`);
               return;
             }
             csvElement.value = data;
@@ -1017,14 +1017,14 @@ no-nested-ternary,no-shadow,no-plusplus,consistent-return,import/no-extraneous-d
           function saveFile(name, data) {
             const chooser = document.querySelector(name);
             setCvsContent(data);
-            chooser.removeEventListener('change', function() { });
+            chooser.removeEventListener('change', () => { });
             chooser.addEventListener('change', function (evt) {
               const fs = require('fs');
-              const csvElement = document.getElementById(__CSV_CONTENT_ID)
-              let cvsContent = csvElement !== null
-                ? document.getElementById(__CSV_CONTENT_ID).value
-                : `Textarea element with id=${__CSV_CONTENT_ID} not exits in DOM`;
-              fs.writeFile(this.value, cvsContent, (err) => {
+              const csvElement = document.getElementById(CSV_CONTENT_ID);
+              const csvContent = csvElement !== null
+                ? document.getElementById(CSV_CONTENT_ID).value
+                : `Textarea element with id=${CSV_CONTENT_ID} not exits in DOM`;
+              fs.writeFile(this.value, csvContent, (err) => {
                 if (err) {
                   $log.debug(evt, err);
                 }

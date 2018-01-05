@@ -1125,7 +1125,7 @@ no-nested-ternary,no-shadow,no-plusplus,consistent-return,import/no-extraneous-d
               }
             });
           }
-        }
+        };
 
         self.updateLocalTxHistory = function (client, cb) {
           const walletId = client.credentials.walletId;

@@ -5,7 +5,7 @@
 
 <div class="content" ng-scrollbars>
     <form name="newContact" ng-submit="contact.create()" novalidate>
-      <div class="" style="padding: 10px 20px 0px;">
+      <div class="contact_form">
         <div class="input-wrap">
           <label class="required" for="address">{{ 'Wallet address' | translate}}</label>
           <input id="address" class="animated" ng-class="{'shake error' : (newContact.address.$touched && newContact.address.$invalid || contact.address_error)}" valid-address type="text" ng-model="contact.address" name="address" required>
@@ -32,7 +32,7 @@
           <textarea name="description" id="description" ng-model="contact.description" cols="30" rows="10"></textarea>
         </div>
       </div>
-      <div class="" style="padding: 0 20px 10px;">
+      <div class="contact_form_button_div">
         <button class="btn btn_red btn_red-full" ng-disabled="newContact.$invalid" type="submit">
           {{ 'Save' | translate }}
         </button>

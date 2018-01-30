@@ -37,7 +37,13 @@
         </div>
         <div class="input-wrap">
           <label for="description">{{ 'Description' | translate}}</label>
-          <textarea name="description" id="description" ng-model="contact.description" cols="30" rows="10"></textarea>
+          <textarea name="description" id="description" ng-model="contact.description"
+                    cols="30" rows="3" ng-maxlength="500"
+                    ng-class="{'shake error' : newContact.description.$touched && newContact.description.$invalid}">
+          </textarea>
+          <div class="has-error" ng-show="newContact.description.$touched && newContact.description.$invalid" translate>
+            Field is too long
+          </div>
         </div>
       </div>
 

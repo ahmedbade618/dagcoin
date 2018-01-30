@@ -1,6 +1,7 @@
 angular.module('copayApp.controllers').controller('correspondentDeviceController',
   ($scope, $rootScope, $timeout, $sce, $modal, configService, profileService, animationService, isCordova, go,
-    correspondentListService, addressService, lodash, $deepStateRedirect, $state, backButton, connectionService, ENV, gettextCatalog) => {
+    correspondentListService, addressService, lodash, $deepStateRedirect, $state, backButton, connectionService, ENV,
+   gettextCatalog, correspondentDeviceUtility) => {
     const chatStorage = require('byteballcore/chat_storage.js');
     const constants = require('byteballcore/constants.js');
     console.log('correspondentDeviceController');
@@ -943,11 +944,6 @@ angular.module('copayApp.controllers').controller('correspondentDeviceController
     }
 
     $scope.goToCorrespondentDevices = function () {
-      if ($rootScope.goBackState) {
-        go.path($rootScope.goBackState);
-      } else {
-        $deepStateRedirect.reset('correspondentDevices');
-        go.path('correspondentDevices');
-      }
+      correspondentDeviceUtility.goToCorrespondentDevices();
     };
   });

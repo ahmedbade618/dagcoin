@@ -1,6 +1,6 @@
 angular.module('copayApp.controllers').controller('correspondentDeviceController',
   ($scope, $rootScope, $timeout, $sce, $modal, configService, profileService, animationService, isCordova, go,
-    correspondentListService, addressService, lodash, $deepStateRedirect, $state, backButton, connectionService, ENV,
+    correspondentListService, addressService, lodash, $state, backButton, connectionService, ENV,
    gettextCatalog, correspondentDeviceUtility) => {
     const chatStorage = require('byteballcore/chat_storage.js');
     const constants = require('byteballcore/constants.js');

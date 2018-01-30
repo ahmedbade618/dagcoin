@@ -2,7 +2,8 @@
   'use strict';
 
   angular.module('copayApp.controllers').controller('correspondentDevicesController',
-    ($scope, $timeout, configService, profileService, go, correspondentListService, $state, $rootScope, lodash, ENV) => {
+    ($scope, $timeout, configService, profileService, go, correspondentListService, $state, $rootScope, lodash, ENV,
+     $deepStateRedirect, correspondentDeviceUtility) => {
       const wallet = require('byteballcore/wallet.js');
       $scope.editCorrespondentList = false;
       $scope.selectedCorrespondentList = {};
@@ -15,11 +16,16 @@
 
       let listScrollTop = 0;
 
-      $scope.$on('$stateChangeStart', (evt, toState) => {
+      $scope.$on('$stateChangeStart', (evt, toState, toParams, fromState) => {
         if (toState.name === 'correspondentDevices') {
           $scope.readList();
           $rootScope.$emit('Local/SetTab', 'chat', true);
           setTimeout(() => {
+            if (!lodash.startsWith(fromState.name, 'correspondentDevices')
+                && lodash.startsWith($state.current.name, 'correspondentDevices.')) {
+              correspondentDeviceUtility.goToCorrespondentDevices();
+              return;
+            }
             document.querySelector('[ui-view=chat]').scrollTop = listScrollTop;
           }, 5);
         }

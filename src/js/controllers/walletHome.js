@@ -309,13 +309,12 @@
             $scope.remove = function (addr) {
               $scope.error = null;
               $timeout(() => {
-
-                if(addressbookService.remove(addr)){
+                if (addressbookService.remove(addr)) {
                   addressbookService.list((ab) => {
                     $rootScope.$emit('Local/AddressbookUpdated', ab);
                     $scope.list = ab;
                     $scope.$digest();
-                  })
+                  });
                 }
               }, 100);
             };

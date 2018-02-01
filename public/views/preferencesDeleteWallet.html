@@ -2,8 +2,7 @@
 
 <div class="content preferences" ng-controller="preferencesDeleteWalletController as preferences">
   <div class="columns text-center text-black text-bold">
-    {{index.walletName}}
-    <span ng-show="index.alias"><br/>({{index.alias}})</span>
+    {{index.alias ? index.alias : index.walletName}}
   </div>
   <div class="columns text-center">
     <p><strong class="text-warning text-center m0" translate>Warning!</strong></p>

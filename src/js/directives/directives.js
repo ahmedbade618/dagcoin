@@ -229,5 +229,24 @@
     restrict: 'E',
     replace: true,
     templateUrl: 'views/includes/available-balance.html',
-  }));
+  }))
+  .directive('normalizeAmount', ['utilityService', function (utilityService) {
+    return {
+      require: 'ngModel',
+      link: (scope, element, attrs, ctrl) => {
+        const normalizeAmount = function (inputValue) {
+          if (inputValue === undefined) {
+            return '';
+          }
+          const normalized = utilityService.normalizeAmount(element.val());
+          if (normalized !== inputValue) {
+            ctrl.$setViewValue(normalized);
+            ctrl.$render();
+          }
+          return normalized;
+        };
+        ctrl.$parsers.push(normalizeAmount);
+      }
+    };
+  }]);
 }());

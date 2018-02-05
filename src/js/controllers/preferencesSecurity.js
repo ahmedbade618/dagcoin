@@ -2,10 +2,11 @@
   'use strict';
 
   angular.module('copayApp.controllers').controller('preferencesSecurityController',
-    function ($scope, $q, $rootScope, $log, $modal, configService, uxLanguage, pushNotificationsService, profileService,
-              fundingExchangeProviderService, animationService, changeWalletTypeService, gettext, gettextCatalog) {
+    function ($scope, $q, $rootScope, $log, $modal, $timeout, configService, uxLanguage, pushNotificationsService, profileService,
+              fingerprintService, fundingExchangeProviderService, animationService, changeWalletTypeService, gettext, gettextCatalog) {
       const conf = require('byteballcore/conf.js');
       const self = this;
+      const fc = profileService.focusedClient;
       self.fundingNodeSettings = {};
       self.isLight = conf.bLight;
       self.canChangeWalletType = changeWalletTypeService.canChange();
@@ -31,7 +32,12 @@
         this.currentLanguageName = uxLanguage.getCurrentLanguageName();
         this.torEnabled = conf.socksHost && conf.socksPort;
         $scope.pushNotifications = config.pushNotifications.enabled;
-
+        if (fingerprintService.isAvailable()) {
+          const walletId = fc.credentials.walletId;
+          this.touchidAvailable = true;
+          config.touchIdFor = config.touchIdFor || {};
+          $scope.touchid = config.touchIdFor[walletId];
+        }
         self.initFundingNode();
       };
 
@@ -101,6 +107,36 @@
         }
       });
 
+      const unwatchRequestTouchid = $scope.$watch('touchid', (newVal, oldVal) => {
+        if (newVal === oldVal || $scope.touchidError) {
+          $scope.touchidError = false;
+          return;
+        }
+        const walletId = profileService.focusedClient.credentials.walletId;
+
+        const opts = {
+          touchIdFor: {},
+        };
+        opts.touchIdFor[walletId] = newVal;
+
+        profileService.requestTouchid('unlockingApp', (err) => {
+          if (err) {
+            $log.debug(err);
+            $timeout(() => {
+              $scope.touchidError = true;
+              $scope.touchid = oldVal;
+            }, 100);
+          }
+          configService.set(opts, (configServiceError) => {
+            if (configServiceError) {
+              $log.debug(configServiceError);
+              $scope.touchidError = true;
+              $scope.touchid = oldVal;
+            }
+          });
+        });
+      });
+
       const unwatchFundingNode = $scope.$watch(() => self.fundingNode, (newVal, oldVal) => {
         if (oldVal === null || oldVal === undefined || newVal === oldVal) {
           return;
@@ -142,6 +178,7 @@
       $scope.$on('$destroy', () => {
         unwatchPushNotifications();
         unwatchEncrypt();
+        unwatchRequestTouchid();
         unwatchFundingNode();
       });
 
@@ -149,8 +186,8 @@
         if (self.isLight) {
           const ModalInstanceCtrl = function ($scopeModal, $modalInstance, $sce) {
             $scopeModal.header = $sce.trustAsHtml(gettextCatalog.getString('Change wallet type!'));
-            $scopeModal.title = $sce.trustAsHtml(gettextCatalog.getString(`The wallet will contain the most current state of the entire Dagcoin database. 
-            This option is better for privacy but will take several gigabytes of storage and the initial sync will take several days. 
+            $scopeModal.title = $sce.trustAsHtml(gettextCatalog.getString(`The wallet will contain the most current state of the entire Dagcoin database.
+            This option is better for privacy but will take several gigabytes of storage and the initial sync will take several days.
             CPU load will be high during sync. After changing to full wallet your money won't be visible until database will synchronize your transactions.`));
 
             $scopeModal.yes_label = gettextCatalog.getString('Change it');

@@ -809,7 +809,7 @@
 
           indexScope.setOngoingProcess(gettextCatalog.getString('sending'), true);
           $timeout(() => {
-            profileService.requestTouchid((err) => {
+            profileService.requestTouchid(null, (err) => {
               if (err) {
                 profileService.lockFC();
                 indexScope.setOngoingProcess(gettextCatalog.getString('sending'), false);

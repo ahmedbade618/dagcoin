@@ -235,7 +235,7 @@
       require: 'ngModel',
       link: (scope, element, attrs, ctrl) => {
         const normalizeAmount = function (inputValue) {
-          if (inputValue === undefined) {
+          if (inputValue === undefined || inputValue === null) {
             return '';
           }
           const normalized = utilityService.normalizeAmount(element.val());

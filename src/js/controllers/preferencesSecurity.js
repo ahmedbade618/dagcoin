@@ -31,13 +31,8 @@
         this.hub = config.hub;
         this.currentLanguageName = uxLanguage.getCurrentLanguageName();
         this.torEnabled = conf.socksHost && conf.socksPort;
+        this.touchidAvailable = fingerprintService.isAvailable();
         $scope.pushNotifications = config.pushNotifications.enabled;
-        if (fingerprintService.isAvailable()) {
-          const walletId = fc.credentials.walletId;
-          this.touchidAvailable = true;
-          config.touchIdFor = config.touchIdFor || {};
-          $scope.touchid = config.touchIdFor[walletId];
-        }
         self.initFundingNode();
       };
 
@@ -101,6 +96,7 @@
         }
 
         if (val && !fc.hasPrivKeyEncrypted()) {
+          $scope.touchid = false;
           lock();
         } else if (!val && fc.hasPrivKeyEncrypted()) {
           unlock();
@@ -127,6 +123,7 @@
               $scope.touchid = oldVal;
             }, 100);
           }
+          $scope.encrypt = false;
           configService.set(opts, (configServiceError) => {
             if (configServiceError) {
               $log.debug(configServiceError);

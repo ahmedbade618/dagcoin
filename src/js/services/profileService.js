@@ -169,7 +169,7 @@
               // assuming bindProfile is called on encrypted keys only at program startup
               unlockWalletAndInitDevice();
               device.setDeviceAddress(root.profile.my_device_address);
-            } else if (config.touchIdFor) {
+            } else if (config.touchIdFor[root.focusedClient.credentials.walletId]) {
               unlockWalletWithFingerprintAndInitDevice();
               device.setDeviceAddress(root.profile.my_device_address);
             } else if (root.profile.xPrivKey) {

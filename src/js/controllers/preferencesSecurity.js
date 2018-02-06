@@ -7,7 +7,6 @@
               fingerprintService, fundingExchangeProviderService, animationService, changeWalletTypeService, gettext, gettextCatalog) {
       const conf = require('byteballcore/conf.js');
       const self = this;
-      const fc = profileService.focusedClient;
       self.fundingNodeSettings = {};
       self.isLight = conf.bLight;
       self.canChangeWalletType = changeWalletTypeService.canChange();

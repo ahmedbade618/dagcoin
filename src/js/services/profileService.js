@@ -685,7 +685,7 @@
           return cb();
         }
         return $timeout(() => {
-          root.root.insistUnlockWithFingerprintFC(cb);
+          root.insistUnlockWithFingerprintFC(cb);
         }, 200);
       });
     };

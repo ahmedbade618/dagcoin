@@ -1519,15 +1519,6 @@ no-nested-ternary,no-shadow,no-plusplus,consistent-return,import/no-extraneous-d
         self.setOngoingProcess('recoveringFromSeed', true);
       });
 
-//  self.debouncedUpdate = lodash.throttle(function() {
-//    self.updateAll({
-//      quiet: true
-//    });
-//    self.updateTxHistory();
-//  }, 4000, {
-//    leading: false,
-//    trailing: true
-//  });
 
         $rootScope.$on('Local/Resume', () => {
           $log.debug('### Resume event');

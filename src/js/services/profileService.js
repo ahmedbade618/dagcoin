@@ -134,7 +134,7 @@
       const removeListener = $rootScope.$on('Local/BalanceUpdated', (event, ab) => {
         removeListener();
         breadcrumbs.add('unlockWalletWithFingerprintAndInitDevice BalanceUpdated');
-        root.requestTouchid(null, (err) => {
+        root.insistUnlockWithFingerprintFC(() => {
           breadcrumbs.add('unlockWalletWithFingerprintAndInitDevice unlocked');
           console.log(`unlocked: ${root.focusedClient.credentials.walletId}`);
           const config = configService.getSync();
@@ -676,6 +676,17 @@
         $timeout(autolock, 30 * 1000);
 
         return cb();
+      });
+    };
+
+    root.insistUnlockWithFingerprintFC = function (cb) {
+      root.requestTouchid(null, (err) => {
+        if (!err) {
+          return cb();
+        }
+        return $timeout(() => {
+          root.root.insistUnlockWithFingerprintFC(cb);
+        }, 200);
       });
     };
 

@@ -1,6 +1,8 @@
+/* eslint-disable no-underscore-dangle */
+
 'use strict';
 
-angular.module('copayApp.services').factory('fingerprintService', ($log, gettextCatalog, configService, isCordova, isMobile) => {
+angular.module('copayApp.services').factory('fingerprintService', ($log, gettextCatalog, configService, isCordova, isMobile, FingerprintAuth) => {
   const root = {};
 
   let _isAvailable = false;

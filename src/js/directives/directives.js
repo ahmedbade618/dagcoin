@@ -240,7 +240,7 @@
             return '';
           }
           const attrMaxLength = attrs['ng-maxlength'];
-          const maxLength  = attrMaxLength ? parseInt(attrMaxLength) : 16;
+          const maxLength = attrMaxLength ? parseInt(attrMaxLength, 10) : 16;
           normalized = utilityService.normalizeAmount(element.val()).substring(0, maxLength);
           if (normalized !== inputValue) {
             if (normalized.indexOf('.') >= 0) {

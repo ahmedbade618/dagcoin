@@ -13,12 +13,8 @@
 
       $scope.hideRemove = true;
 
-      $scope.$on('$stateChangeStart', (evt, toState) => {
-        if (toState.name === 'correspondentDevices') {
-          $scope.readList();
-          $rootScope.$emit('Local/SetTab', 'chat', true);
-        }
-      });
+      // emit added because clicking "pairing device" in sidebar does not set tab as chat directly
+      $rootScope.$emit('Local/SetTab', 'chat', true);
 
       $scope.showCorrespondent = function (correspondent) {
         console.log('showCorrespondent', correspondent);

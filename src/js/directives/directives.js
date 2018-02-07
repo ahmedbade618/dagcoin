@@ -235,11 +235,17 @@
       require: 'ngModel',
       link: (scope, element, attrs, ctrl) => {
         const normalizeAmount = function (inputValue) {
+          let normalized;
           if (inputValue === undefined || inputValue === null) {
             return '';
           }
-          const normalized = utilityService.normalizeAmount(element.val());
+          const attrMaxLength = attrs['ng-maxlength'];
+          const maxLength  = attrMaxLength ? parseInt(attrMaxLength) : 16;
+          normalized = utilityService.normalizeAmount(element.val()).substring(0, maxLength);
           if (normalized !== inputValue) {
+            if (normalized.indexOf('.') >= 0) {
+              normalized = normalized.substring(0, normalized.indexOf('.') + 7);
+            }
             ctrl.$setViewValue(normalized);
             ctrl.$render();
           }

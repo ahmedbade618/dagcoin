@@ -3312,4 +3312,10 @@ p.color_red {
   color: $gold;
 }
 
-
+.seed-words {
+  -webkit-user-select: text;
+  background: #efefef;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px dashed #ddd;
+}

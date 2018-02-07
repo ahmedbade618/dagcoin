@@ -15,6 +15,9 @@
 
       let listScrollTop = 0;
 
+      // if pairing devices clicked in sidebar, $stateChangeStart not bind yet, so set tab as chat directly
+      $rootScope.$emit('Local/SetTab', 'chat', true);
+
       $scope.$on('$stateChangeStart', (evt, toState) => {
         if (toState.name === 'correspondentDevices') {
           $scope.readList();
